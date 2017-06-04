@@ -16,7 +16,7 @@ test=pd.read_csv(r'D:\xunleixiazai\test.csv')
 #ticket 重复值少 对分析无用
 #cabin 缺失值多 舍弃
 # Embarked 有缺失值 有三个取值 S最多 有644
-#所有暂时舍弃name，ticket，cabin，fare 对age，Embarked进行缺失值填充
+#暂时舍弃所有name，ticket，cabin，fare 对age，Embarked进行缺失值填充
 #age进行算数平均填充，Embarked进行最多取值填充
 train['Age']=train['Age'].fillna(train['Age'].mean())
 train['Embarked']=train['Embarked'].fillna('S')
@@ -82,4 +82,3 @@ rf.fit(X_train,y_train)
 x_pred=rf.predict(X_test)
 result=pd.DataFrame({'PassengerId':test['PassengerId'],'Survived':x_pred.astype(np.int32)})
 result.to_csv(r"D:\xunleixiazai\titanic1.csv", index=False)
-#实际排名1321
