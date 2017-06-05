@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 %matplotlib inline
 train=pd.read_csv(r'D:\xunleixiazai\train.csv')
 test=pd.read_csv(r'D:\xunleixiazai\test.csv')
+
 # PassengerId 样本编号 对分析无用
 # Survived的获救率为38%
 #  Pclass共有三个取值 50%的等级是3
@@ -18,35 +19,43 @@ test=pd.read_csv(r'D:\xunleixiazai\test.csv')
 # Embarked 有缺失值 有三个取值 S最多 有644
 #暂时舍弃所有name，ticket，cabin，fare 对age，Embarked进行缺失值填充
 #age进行算数平均填充，Embarked进行最多取值填充
+
 train['Age']=train['Age'].fillna(train['Age'].mean())
 train['Embarked']=train['Embarked'].fillna('S')
 train=train.drop(['Name','Ticket','Cabin'],axis=1)
+
 #分析Pclass与Survived的关系
 pmean=train[['Pclass','Survived']].groupby(['Pclass'],as_index=False).mean()
 pcount=train[['Pclass','Survived']].groupby(['Pclass'],as_index=False).count()
 pd.merge(pmean,pcount,on='Pclass',suffixes=('_mean','_count'))
+
 #分析Sex与Survived的关系
 smean=train[['Sex','Survived']].groupby(['Sex'],as_index=False).mean()
 scount=train[['Sex','Survived']].groupby(['Sex'],as_index=False).count()
 pd.merge(smean,scount,on='Sex',suffixes=('_mean','_count'))
+
 #由于Age取值过大进行划分
 train['Age']=train['Age'].astype(np.int32)
 pd.cut(train['Age'],[0,18,35,60])
 train['Age']=np.where(train['Age']<18,0,np.where(train['Age']<35,1,np.where(train['Age']<60,2,3)))
+
 #对Sex也进行01划分frmale=0.male=1
 train['Sex']=np.where(train['Sex']=='female',0,1)
+
 #对 Embarked进行划分s=0,c=1,q=2
 train['Embarked']=np.where(train['Embarked']=='S',0,np.where(train['Embarked']=='C',1,2))
+
 #SibSp：乘客在船上的兄弟姐妹和配偶的数量 Parch：乘客在船上的父母以及小孩的数量 
 train['family']=train['SibSp']+train['Parch']+1
 train['isalone']=np.where(train['family']==1,0,1)
 train.drop('family',axis=1)
+
 #把多余的列删除 'SibSp','Parch','family','Fare','PassengerId'
 train=train.drop(['SibSp','Parch'],axis=1)
 train=train.drop('family',axis=1)
 train=train.drop(['Fare','PassengerId'],axis=1)
-#对test也做相应的处理
 
+#对test也做相应的处理
 test['Age']=test['Age'].fillna(test['Age'].mean())
 test['Embarked']=test['Embarked'].fillna(test['Age'].max())
 test=test.drop(['Name','Ticket','Cabin'],axis=1)
@@ -61,12 +70,14 @@ test.drop('family',axis=1)
 test=test.drop(['SibSp','Parch'],axis=1)
 test=test.drop('family',axis=1)
 test=test.drop('Fare',axis=1)
+
 #训练
 X_train=train.drop('Survived',axis=1)
 y_train=train['Survived']
 X_test=test.drop('PassengerId',axis=1).copy()
 X_train.shape,y_train.shape,X_test.shape
-#用LR分析0.755
+
+#用LR分析 0.755
 from sklearn.linear_model import LogisticRegression
 clf=LogisticRegression()
 clf.fit(X_train,y_train)
@@ -75,7 +86,8 @@ x_pred=clf.predict(X_test)
 x_pred
 result=pd.DataFrame({'PassengerId':test['PassengerId'], 'Survived':x_pred.astype(np.int32)})
 result.to_csv(r"D:\xunleixiazai\titanic.csv", index=False)
-#用rf分许0.794
+
+#用rf分析  0.794
 from sklearn.ensemble import RandomForestClassifier
 rf=RandomForestClassifier(n_estimators=100)
 rf.fit(X_train,y_train)
