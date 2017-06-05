@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd 
 train=pd.read_csv(r'C:\Users\Administrator\Desktop\train.csv')
 test=pd.read_csv(r'C:\Users\Administrator\Desktop\test.csv')
-# def convert_AgeuponOutcome_to_year(time):处理不好试用week
+
+# def convert_AgeuponOutcome_to_year(time):#处理不好试用week
 #     result = {}
 #     for k in time['AgeuponOutcome'].unique():
 #         if type(k) != type(""):
@@ -17,7 +18,8 @@ test=pd.read_csv(r'C:\Users\Administrator\Desktop\test.csv')
 #                      result[k] = int(x1) /52.0
 #             elif x2 in ["day", "days"]:
 #                      result[k] = int(x1)/365.0
-def convert_AgeuponOutcome_to_year(time):
+
+def convert_AgeuponOutcome_to_year(time):#统一化时间
     result = {}
     for k in time['AgeuponOutcome'].unique():
         if type(k) != type(""):
@@ -34,9 +36,11 @@ def convert_AgeuponOutcome_to_year(time):
                      result[k] = int(x1)/7.0
     time['AgeuponOutcome'] = time['AgeuponOutcome'].map(result).astype(float)
     return time
+    
 train = convert_AgeuponOutcome_to_year(train)
 test = convert_AgeuponOutcome_to_year(test)
-def convert_to_numeric(x):
+
+def convert_to_numeric(x):#
     for col in ['Name', 'AnimalType', 'SexuponOutcome',
                 'Breed', 'Color', 'OutcomeType']:
         if col in x.columns:
@@ -44,10 +48,11 @@ def convert_to_numeric(x):
             values_dict = dict(zip(values, range(len(values))))
             x[col] = x[col].map(values_dict).astype(int)
     return x
+    
 train = convert_to_numeric(train)
 test = convert_to_numeric(test)
-#对时间
-def time(x):
+
+def time(x):#对时间
     a1=[]
     a2=[]
     a3=[]
@@ -63,47 +68,57 @@ def time(x):
     x['month']=a2
     x['day']=a3
     return x
+    
 train=time(train)
 test=time(test)
-x_label=train['OutcomeType'].astype(int)
+
+x_label=train['OutcomeType'].astype(int)#标签
 y_id=test['ID'].astype(int)
+
 train=train.drop(['AnimalID','Name','DateTime','OutcomeSubtype','OutcomeType'],axis=1)
 test=test.drop(['ID','Name','DateTime',],axis=1)
 train['OutcomeType']=x_label
 test['ID']=y_id
-from sklearn.ensemble import RandomForestClassifier
+
+from sklearn.ensemble import RandomForestClassifier#RF模型
 rf=RandomForestClassifier()
 rf.fit(train.values[:,:-1],train.values[:,-1])
 a=rf.predict_proba(test.values[:,:-1])
+
 result=pd.DataFrame(a,columns=['Return_to_owner', 'Euthanasia', 'Adoption', 'Transfer', 'Died'])
 result.insert(0,'ID',test.values[:,0].astype(int))
 id=[i for i in range(1,11457)]
 result['ID']=id
 result.to_csv(r'C:/Users/Administrator/Desktop/results.csv',index=False)
+
 #结果7.73不理想
-#用交叉验证调rf参数
+#用交叉验证调RF参数
 from sklearn.grid_search import GridSearchCV
-param_test1={'n_estimators':[80,90,100,110,120,130,70]}
+param_test1={'n_estimators':[80,90,100,110,120,130,70]}#先对迭代次数进行优化
 gsearch1=GridSearchCV(estimator=RandomForestClassifier(min_samples_split=100,min_samples_leaf=20,max_depth=8,max_features='sqrt',random_state=10),
-                      param_grid=param_test1,cv=10)
+                      param_grid=param_test1,cv=10)                   
 gsearch1.fit(train.values[:,:-1],train.values[:,-1])
 gsearch1.grid_scores_,gsearch1.best_params_, gsearch1.best_score_
-param_test2 = {'max_depth':[3,5,7,9,11,13], 'min_samples_split':[50,70,90,110,130,150,170]}
+
+param_test2 = {'max_depth':[3,5,7,9,11,13], 'min_samples_split':[50,70,90,110,130,150,170]}#cart最大深度与最小样本数有联系，一起优化
 gsearch2 = GridSearchCV(estimator = RandomForestClassifier(n_estimators= 90,
                         min_samples_leaf=20,max_features='sqrt' ,oob_score=True, random_state=10),
                         param_grid = param_test2, cv=10)
 gsearch2.fit(train.values[:,:-1],train.values[:,-1])
 gsearch2.grid_scores_, gsearch2.best_params_, gsearch2.best_score_
-param_test3 = {'max_features':[2,4,6,8]}
+
+param_test3 = {'max_features':[2,4,6,8]}#对最大特征进行优化
 gsearch3 = GridSearchCV(estimator = RandomForestClassifier(n_estimators= 90, max_depth=11, min_samples_split=70,
                                     min_samples_leaf=20 ,oob_score=True, random_state=10),
                                     param_grid = param_test3,cv=10)
 gsearch3.fit(train.values[:,:-1],train.values[:,-1])
 gsearch3.grid_scores_, gsearch3.best_params_, gsearch3.best_score_
+
 rf2=RandomForestClassifier(n_estimators= 90, max_depth=11,
                            min_samples_split=70, min_samples_leaf=20,max_features=4 ,oob_score=True, random_state=10)
 rf2.fit(train.values[:,:-1],train.values[:,-1])
 b=rf2.predict_proba(test.values[:,:-1])
+
 result2=pd.DataFrame(b,columns=['Return_to_owner', 'Euthanasia', 'Adoption', 'Transfer', 'Died'])
 result2.insert(0,'ID',test.values[:,0].astype(int))
 id=[i for i in range(1,11457)]
